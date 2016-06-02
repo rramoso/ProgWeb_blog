@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div>
+        <h1>
+            ${article.title}
+        </h1>
+        <p>
+            ${article.content}
+        </p>
+        <p>
+            <#list article.tags as tag>
+                ${tag.tag}
+            </#list>
+        </p>
+    </div>
+
+    <form action="/articulo/${article.id}" method="post">
+        <textarea name="comment" placeholder="Comente aqui...">
+
+        </textarea>
+        <button name = "send" type="submit">
+            Comentar
+        </button>
+    </form>
+    <div>
+        <#list article.getComments() as comment>
+            <p>
+                ${comment}
+            </p>
+        </#list>
+    </div>
+
+</body>
+</html>
