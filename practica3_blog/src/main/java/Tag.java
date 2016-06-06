@@ -1,6 +1,8 @@
 /**
  * Created by ricardoramos on 6/1/16.
  */
+import java.sql.*;
+
 public class Tag {
 
     private int id;
@@ -21,4 +23,6 @@ public class Tag {
     public void setTag(String tag) {
         this.tag = tag;
     }
+
+
 }

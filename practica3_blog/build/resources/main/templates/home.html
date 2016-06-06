@@ -7,7 +7,14 @@
 <body>
     <#list articles as article>
 
-        <li>${article.previewText()}: ${article.getContenido()}</li>
+        <li><div>
+                <a href="/articulo/${article.id}">
+                    <h2>${article.titulo}</h2>
+                </a>
+                <p> ${article.previewText()}</p>
+                <p></p>
+            </div>
+        </li>
 
     </#list>
 </body>

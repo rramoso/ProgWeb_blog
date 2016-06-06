@@ -1,6 +1,9 @@
 /**
  * Created by ricardoramos on 6/1/16.
  */
+import java.sql.SQLException;
+import java.sql.Statement;
+
 public class Usuario {
 
     private String username;
@@ -49,8 +52,12 @@ public class Usuario {
         this.author = author;
     }
 
-    public void createUser(){
-
+    public void createUser(Statement statement){
+        try {
+            statement.execute(String.format("INSERT INTO USUARIO(username,nombre,password,administrador) VALUES('%s','%s','%s',%s)",this.getUsername(),this.getName(),this.getPassword(),this.isAdmin()));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
 

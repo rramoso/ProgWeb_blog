@@ -1,4 +1,7 @@
 import javax.xml.soap.Text;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -70,25 +73,71 @@ public class Articulos {
         this.comments = comments;
     }
 
-    public void createArticle(Usuario blogger, String title, String content){
 
+
+    public void createArticle(Statement statement){
+
+        Usuario username = this.getAutor();
+        String query = String.format("INSERT INTO ARTICULO(titulo,cuerpo,autor,fecha) VALUES('%s','%s','%s','%s')",this.getTitulo(),this.getContenido(),username.getUsername(),this.getDate());
+        try {
+            statement.execute(query);
+
+            ResultSet rs = statement.executeQuery(String.format("SELECT ID FROM ARTICULO WHERE TITULO='%s'",this.getTitulo()));
+            while(rs.next()){
+                this.setId(rs.getInt("id"));
+            }
+
+            for (Tag tag: this.getTags()) {
+                String queryTag = String.format("INSERT INTO ARTICULO_ETIQUETA(articulo,etiqueta) VALUES(%s,%s)",this.getId(),tag.getId());
+                statement.execute(queryTag);
+            }
+            if(this.getComments() != null){
+                for (Comment comment:this.getComments()) {
+                    String queryComment = String.format("INSERT INTO COMENTARIO(autor,articulo,comment) VALUES(%s,%s,%s)",this.getAutor().getUsername(),this.getId(),comment.getId());
+                    statement.execute(queryComment);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
     }
-    public void editArticle(Usuario blogger, String title, String content){
 
+    public void editArticle(Statement statement){
+        Usuario username = this.getAutor();
+        String query = String.format("UPDATE ARTICULO SET titulo ='%s' ,cuerpo= '%s' WHERE id= %s",this.getTitulo(),this.getContenido(),this.getId());
+
+        try {
+            statement.execute(query);
+
+            for (Tag tag: this.getTags()) {
+                String queryTag = String.format("INSERT INTO ARTICULO_ETIQUETA(articulo,etiqueta) VALUES(%s,%s)",this.getId(),tag.getId());
+                statement.execute(queryTag);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void deleteArticle(Usuario blogger){
+    public void deleteArticle(Statement statement){
 
-    }
-
-    public void addComment(Comment comment){
+        try {
+            statement.execute(String.format("DELETE FROM COMENTARIO WHERE articulo = %s",this.getId()));
+            statement.execute(String.format("DELETE FROM ARTICULO_ETIQUETA WHERE ARTICULO = %s",this.getId()));
+            statement.execute(String.format("DELETE FROM ARTICULO WHERE ID = %s",this.getId()));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
     }
 
     public String previewText(){
-
-        return this.contenido.substring(0,69);
+        if(this.contenido.length() < 70){
+            return this.getContenido();
+        }
+        return this.getContenido().substring(0,69);
     }
 
 }

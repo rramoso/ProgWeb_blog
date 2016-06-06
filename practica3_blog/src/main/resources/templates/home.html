@@ -8,7 +8,9 @@
     <#list articles as article>
 
         <li><div>
-                <h2>${article.title}</h2>
+                <a href="/articulo/${article.id}">
+                    <h2>${article.titulo}</h2>
+                </a>
                 <p> ${article.previewText()}</p>
                 <p></p>
             </div>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Spark Blog</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <link href="/css/blog-home.css" rel="stylesheet" >
+
+</head>
+
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Spark Blog</a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="/">Articulos</a>
+                </li>
+                <li>
+                    <a href="/crear/articulo">Nueva Entrada</a>
+                </li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+<div class="container">
+
+    <div class="row">
+
+        <!-- Blog Entries Column -->
+        <div class="col-md-12">
+            <hr>
+            <h1 class="page-header">
+                Nueva Entrada
+            </h1>
+            </div>
+        </div>
+    </div>
+
+<hr>
+
+<div class="well">
+    <#if edit == 0 >
+        <form action="/crearArticulo/" method="post">
+            <h4>Titulo</h4>
+            <input type="text" name="title" class="form-control" placeholder="Titulo">
+            <h4>Entrada</h4>
+
+            <div class="form-group">
+                <input type="text" name="content" class="form-control" rows="3"></input>
+            </div>
+            <h5>Tags</h5>
+            <input type="text" name="tags" class="form-control">
+            <br>
+            <button type="submit" class="btn btn-primary">Aceptar</button>
+
+        </form>
+    <#else>
+        <form action="/editando/${article.id}" method="post">
+            <h4>Titulo</h4>
+            <input type="text" name="title" class="form-control" value="${article.titulo}" placeholder="Titulo">
+            <h4>Entrada</h4>
+
+            <div class="form-group">
+                <input type="text" name="content" class="form-control" value="${article.contenido}" rows="3
+
+
+
+                "></input>
+            </div>
+            <h5>Tags</h5>
+
+            <input type="text" name="tags" class="form-control" value="${tags}">
+            <br>
+            <button type="submit" class="btn btn-primary">Aceptar</button>
+
+        </form>
+    </#if>
+
+</div>
+
+<hr>
+</body>
+</html>
