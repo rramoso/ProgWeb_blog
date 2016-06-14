@@ -3,16 +3,38 @@
  */
 import java.sql.*;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "ETIQUETA")
 public class Tag {
 
-    private int id;
+    @Id
+    @GeneratedValue
+    @Column(name = "ID")
+    private Integer id;
+
+    @Column(name = "TAG", length = 50, unique = true)
     private String tag;
 
-    public int getId() {
+    public Tag(){
+
+    }
+    public Tag(Integer id, String tag){
+
+        this.setId(id);
+        this.setTag(tag);
+    }
+
+    public Tag(String tag) {
+        this.setTag(tag);
+    }
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

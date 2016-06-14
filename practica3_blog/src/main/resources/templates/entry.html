@@ -76,7 +76,7 @@
             <h4>Entrada</h4>
 
             <div class="form-group">
-                <input type="text" name="content" class="form-control" rows="3"></input>
+                <input type="text" name="content" class="form-control" rows="3"/>
             </div>
             <h5>Tags</h5>
             <input type="text" name="tags" class="form-control">
@@ -87,15 +87,11 @@
     <#else>
         <form action="/editando/${article.id}" method="post">
             <h4>Titulo</h4>
-            <input type="text" name="title" class="form-control" value="${article.titulo}" placeholder="Titulo">
+            <input type="text" name="title" class="form-control" value="${article.getTitulo()}" placeholder="Titulo">
             <h4>Entrada</h4>
 
             <div class="form-group">
-                <input type="text" name="content" class="form-control" value="${article.contenido}" rows="3
-
-
-
-                "></input>
+                <input type="text" name="content" class="form-control" value="${article.getContenido()}" rows="3"/>
             </div>
             <h5>Tags</h5>
 

@@ -1,21 +1,90 @@
-import javax.xml.soap.Text;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+
+import javax.persistence.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Set;
 import java.util.ArrayList;
 
 /**
  * Created by ricardoramos on 6/1/16.
  */
+@Entity
+@Table(name = "ARTICULO")
 public class Articulos {
 
+    @Id
+    @GeneratedValue
+    @Column(name = "ID")
     private int id;
+
+    @ManyToOne
     private Usuario autor;
+
+    @Column(name = "TITULO", length = 50)
     private String titulo;
+
+    @Column(name = "CUERPO", length = 80000, unique = true)
     private String contenido;
-    private String date;
-    private ArrayList<Tag> tags;
-    private ArrayList<Comment> comments;
+
+    @Column(name = "FECHA")
+    private Date date;
+
+    @Column(name = "LIKES")
+    private int likes;
+
+    @Column(name = "DISLIKES")
+    private int dislikes;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @Column(name = "ETIQUETAS")
+    private Set<Tag> tags;
+
+    @OneToMany(mappedBy = "article", fetch = FetchType.EAGER)
+    @Column(name = "COMENTARIOS")
+    private Set<Comment> comments;
+
+    public Articulos(Integer id, String title, String body, Usuario author, Set<Comment> Comments, Set<Tag> Tags){
+
+        this.setId(id);
+        this.setTitulo(title);
+        this.setContenido(body);
+        this.setAutor(author);
+
+        this.setComments(Comments);
+        this.setTags(Tags);
+
+        this.setLikes(0);
+        this.setDislikes(0);
+
+        java.util.Date utilDate = new java.util.Date();
+        java.sql.Date date = new java.sql.Date(utilDate.getTime());
+
+        this.setDate(date);
+
+    }
+    public Articulos(){
+
+    }
+
+    public String previewText(){
+        if(this.contenido.length() < 70){
+            return this.getContenido();
+        }
+        return this.getContenido().substring(0,69);
+    }
+
+    public Articulos(String title, String body, Usuario author) {
+        this.setTitulo(title);
+        this.setContenido(body);
+        this.setAutor(author);
+
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+
+        this.setDate(date);
+    }
+
 
     public int getId() {
         return id;
@@ -49,95 +118,44 @@ public class Articulos {
         this.contenido = contenido;
     }
 
-    public String getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
-    public ArrayList<Tag> getTags() {
+    public Set<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(ArrayList<Tag> tags) {
+    public void setTags(Set<Tag> tags) {
         this.tags = tags;
     }
 
-    public ArrayList<Comment> getComments() {
+    public Set<Comment> getComments() {
         return comments;
     }
 
-    public void setComments(ArrayList<Comment> comments) {
+    public void setComments(Set<Comment> comments) {
         this.comments = comments;
     }
 
 
-
-    public void createArticle(Statement statement){
-
-        Usuario username = this.getAutor();
-        String query = String.format("INSERT INTO ARTICULO(titulo,cuerpo,autor,fecha) VALUES('%s','%s','%s','%s')",this.getTitulo(),this.getContenido(),username.getUsername(),this.getDate());
-        try {
-            statement.execute(query);
-
-            ResultSet rs = statement.executeQuery(String.format("SELECT ID FROM ARTICULO WHERE TITULO='%s'",this.getTitulo()));
-            while(rs.next()){
-                this.setId(rs.getInt("id"));
-            }
-
-            for (Tag tag: this.getTags()) {
-                String queryTag = String.format("INSERT INTO ARTICULO_ETIQUETA(articulo,etiqueta) VALUES(%s,%s)",this.getId(),tag.getId());
-                statement.execute(queryTag);
-            }
-            if(this.getComments() != null){
-                for (Comment comment:this.getComments()) {
-                    String queryComment = String.format("INSERT INTO COMENTARIO(autor,articulo,comment) VALUES(%s,%s,%s)",this.getAutor().getUsername(),this.getId(),comment.getId());
-                    statement.execute(queryComment);
-                }
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+    public int getLikes() {
+        return likes;
     }
 
-    public void editArticle(Statement statement){
-        Usuario username = this.getAutor();
-        String query = String.format("UPDATE ARTICULO SET titulo ='%s' ,cuerpo= '%s' WHERE id= %s",this.getTitulo(),this.getContenido(),this.getId());
-
-        try {
-            statement.execute(query);
-
-            for (Tag tag: this.getTags()) {
-                String queryTag = String.format("INSERT INTO ARTICULO_ETIQUETA(articulo,etiqueta) VALUES(%s,%s)",this.getId(),tag.getId());
-                statement.execute(queryTag);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public void setLikes(int likes) {
+        this.likes = likes;
     }
 
-    public void deleteArticle(Statement statement){
-
-        try {
-            statement.execute(String.format("DELETE FROM COMENTARIO WHERE articulo = %s",this.getId()));
-            statement.execute(String.format("DELETE FROM ARTICULO_ETIQUETA WHERE ARTICULO = %s",this.getId()));
-            statement.execute(String.format("DELETE FROM ARTICULO WHERE ID = %s",this.getId()));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+    public int getDislikes() {
+        return dislikes;
     }
 
-    public String previewText(){
-        if(this.contenido.length() < 70){
-            return this.getContenido();
-        }
-        return this.getContenido().substring(0,69);
+    public void setDislikes(int dislikes) {
+        this.dislikes = dislikes;
     }
-
 }

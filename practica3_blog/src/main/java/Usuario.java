@@ -1,16 +1,48 @@
 /**
  * Created by ricardoramos on 6/1/16.
  */
+import javax.persistence.*;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+@Entity
+@Table(name = "USUARIO")
 public class Usuario {
 
+    @Id
+    @Column(name = "USERNAME", length = 50)
     private String username;
+
+    @Column(name = "NOMBRE", length = 100)
     private String name;
+
+    @Column(name = "PASSWORD", length = 20)
     private String password;
+
+    @Column(name = "ADMIN")
     private boolean admin;
+
+    @Column(name = "AUTOR")
     private boolean author;
+
+    public Usuario(){}
+
+
+
+    public Usuario(String username, String name, String password, boolean admin, boolean author){
+
+        this.setUsername(username);
+        this.setName(name);
+        this.setPassword(password);
+        this.setAdmin(admin);
+        this.setAuthor(author);
+    }
+
+    public Usuario(String username, String name, String pass) {
+        this.setUsername(username);
+        this.setPassword(pass);
+        this.setName(name);
+    }
 
     public String getUsername() {
         return username;
@@ -52,12 +84,6 @@ public class Usuario {
         this.author = author;
     }
 
-    public void createUser(Statement statement){
-        try {
-            statement.execute(String.format("INSERT INTO USUARIO(username,nombre,password,administrador) VALUES('%s','%s','%s',%s)",this.getUsername(),this.getName(),this.getPassword(),this.isAdmin()));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+
 }
 

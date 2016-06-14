@@ -4,10 +4,7 @@
 
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static spark.Spark.*;
 import spark.Session;
@@ -20,72 +17,79 @@ public class main {
 
     public static void main(String[] arg) throws Exception{
 
-        Class.forName("org.h2.Driver");
-        Connection connection =  DriverManager.getConnection("jdbc:h2:~/test","sa","");
-        Statement statement = connection.createStatement();
         staticFiles.location("/");
         Configuration configuration=new Configuration();
 
-        Services services = new Services();
         configuration.setClassForTemplateLoading(main.class, "/templates");
         FreeMarkerEngine freeMarkerEngine = new FreeMarkerEngine(configuration);
 
-        Usuario admin = new Usuario();
-        admin.setUsername("admin");
-        admin.setAdmin(true);
-        admin.setName("Fulano");
-        admin.setPassword("admin01");
+        Usuario admin = new Usuario("admin","Fulano","admin01",true,true);
 
-        admin.createUser(statement);
+        if(UserServices.getInstance().findAll().size() == 0){
 
-        get("/",(request, response) -> {
+            UserServices.getInstance().crear(admin);
+        }
+
+        before("/",(request, response) -> {
+
+            response.redirect("/page/1");
+        });
+
+        get("/page/:page",(request, response) -> {
+
             Map<String, Object> attributes = new HashMap<>();
-            ArrayList<Articulos> articles = new ArrayList<>();
+            int page;
+            if(request.params("page").equals("")){
+                page = 1;
+            }
+            else{
+                page = Integer.parseInt(request.params("page"));
+            }
+
+            List<Articulos> articles = ArticulosServices.getInstancia().findAll();
+            List<Articulos> result = new ArrayList<Articulos>();
+            int count = 0;
+
+            for(Articulos art : articles){
+                count++;
+                System.out.println("\n\nCount: "+ count);
+                System.out.println(page*5-5);
+                System.out.println(page*5);
+
+                if(count > page*5-5 && count <= page*5){
+                    result.add(art);
+                    System.out.println("\tSODA STEREO\n\n\n");
+                }
+            }
             Session s = request.session(true);
-
-            String query = "SELECT * FROM Articulo";
-
-            ResultSet articleQuery = statement.executeQuery(query);
-            while (articleQuery.next()) {
-
-                Articulos art = new Articulos();
-                Usuario user = services.getUsuario(articleQuery.getString("autor"),connection.createStatement());
-                int articleId = articleQuery.getInt("id");
-
-                art.setId(articleId);
-                art.setTitulo(articleQuery.getString("titulo"));
-                art.setAutor(user);
-                art.setContenido(articleQuery.getString("cuerpo"));
-                art.setDate(articleQuery.getString("fecha"));
-                articles.add(art);
+            String username = s.attribute("username");
+            if(username == null){
+                username = "null";
             }
-            if(s.attribute("username") == null){
 
-                attributes.put("username","null");
-            }
-            else {
-
-                attributes.put("username",s.attribute("username"));
-            }
-            attributes.put("articles",articles);
+            attributes.put("prev_page",page-1);
+            attributes.put("page",page);
+            attributes.put("next_page",page+1);
+            attributes.put("username",username);
+            attributes.put("articles",result);
 
             return new ModelAndView(attributes, "index.html");
         }, freeMarkerEngine);
+
+
+
+
 
         post("/loging",(request, response) -> {
 
             String username = request.queryParams("username");
             String password = request.queryParams("password");
 
-            Usuario user = services.getUsuario(username,statement);
-            System.out.print("USUARIO DESDE LOGINING "+ user.getName());
-            System.out.print(password + " "+ user.getPassword());
-            int pass = password.compareTo(user.getPassword());
+            Usuario user = UserServices.getInstance().find(username);
+
             if (user.getUsername() != null && password.equals(user.getPassword())){
                 Session session = request.session(true);
                 session.attribute("username",username);
-
-                System.out.print("aqui");
 
                 response.redirect("/");
                 return "";
@@ -114,19 +118,15 @@ public class main {
 
         post("/registeting",(request, response) -> {
             Map<String, Object> attributes = new HashMap<>();
-            System.out.print("aqui");
+
             String username = request.queryParams("username_r");
-            String password = request.queryParams("password_r");
             String name = request.queryParams("name");
+            String pass = request.queryParams("password_r");
 
-            Usuario user = services.getUsuario(username,statement);
+            Usuario user = new Usuario(username,name,pass);
+            UserServices.getInstance().crear(user);
 
-            System.out.println(user);
             if (user.getUsername() == null){
-                user.setUsername(username);
-                user.setPassword(password);
-                user.setName(name);
-                user.createUser(connection.createStatement());
 
                 Session session = request.session(true);
                 session.attribute("username",username);
@@ -144,14 +144,14 @@ public class main {
 
             Session session = request.session(true);
             String username = session.attribute("username");
-
+            String id = request.params("article");
             if(username == null){
                 response.redirect("/login");
             }
 
-            Usuario usuario= services.getUsuario(username,connection.createStatement());
+            Usuario usuario= UserServices.getInstance().find(username);
 
-            Articulos article = services.getArticle(Integer.parseInt(request.params("article")),statement);
+            Articulos article = ArticulosServices.getInstancia().find(id);
 
             if(usuario.getUsername() != article.getAutor().getUsername() && !usuario.isAdmin())
             {
@@ -162,9 +162,9 @@ public class main {
         get("/eliminar/:article",(request, response) -> {
             int id = Integer.parseInt(request.params("article"));
 
-            Articulos article = services.getArticle(id,statement);
+            Articulos article = ArticulosServices.getInstancia().find(id);
 
-            article.deleteArticle(statement);
+            ArticulosServices.getInstancia().eliminar(article);
 
             response.redirect("/");
             return "";
@@ -173,14 +173,15 @@ public class main {
         get("/articulo/:articulo",(request, response) -> {
             Map<String, Object> attributes = new HashMap<>();
             int id = Integer.parseInt(request.params("articulo"));
-            Articulos article = services.getArticle(id,statement);
+            Articulos article = ArticulosServices.getInstancia().find(id);
+
             if(article.getId() == 0){
                 halt(404,"Oops, te jodite xD!");
 
             }
 
-            ArrayList<Tag> tags = services.getArticleTags(id,statement,connection.createStatement());
-            ArrayList<Comment> comments = services.getArticleComments(id,statement,connection.createStatement());
+            Set<Tag> tags = article.getTags();
+            Set<Comment> comments = article.getComments();
 
             String author = article.getAutor().getName();
             if (author==null){
@@ -198,36 +199,49 @@ public class main {
         before("/editar/:articulo",(request, response) -> {
             Session s = request.session(true);
             String  user = s.attribute("username");
-
+            int id = Integer.parseInt(request.params("articulo"));
             if (user == null){
                 response.redirect("/login");
 
             }
 
-            Usuario usuario= services.getUsuario(user,connection.createStatement());
-            Articulos article = services.getArticle(Integer.parseInt(request.params("articulo")),statement);
 
-            if(usuario.getUsername() != article.getAutor().getUsername() && !usuario.isAdmin())
+            Usuario usuario= UserServices.getInstance().find(user);
+
+            System.out.println("Tamo aqui");
+            Articulos article = ArticulosServices.getInstancia().find(id);
+            System.out.println("\n\n"+usuario.getUsername()+"\t"+article.getAutor().getUsername()+"\n\n");
+            System.out.println("\n\n"+!usuario.getUsername().equals(article.getAutor().getUsername())+"\n\n");
+
+            if(!usuario.getUsername().equals(article.getAutor().getUsername()) && !usuario.isAdmin())
             {
                 halt(401, usuario.getUsername()+", no estas autorizado para editar este archivo");
             }
-
         });
 
         get("/editar/:articulo",(request, response) -> {
+
+
             Map<String, Object> attributes = new HashMap<>();
+
             int id = Integer.parseInt(request.params("articulo"));
-            Articulos article = services.getArticle(id,statement);
-            attributes.put("edit",1);
-            attributes.put("article",article);
+            Articulos article = ArticulosServices.getInstancia().find(id);
             String tags = "";
-            ArrayList<Tag> tagsa = services.getArticleTags(id,connection.createStatement(),connection.createStatement());
-            ;
-            for (Tag t: tagsa){
-                tags += t.getTag();
-                tags +=",";
+            Set<Comment> comments = article.getComments();
+
+            String author = article.getAutor().getName();
+            if (author == null){
+                author = "no name";
+            }
+            for(Tag tag : article.getTags()){
+                tags +=tag.getTag()+",";
             }
             attributes.put("tags",tags);
+            attributes.put("articleComments",comments);
+            attributes.put("article",article);
+
+            attributes.put("author",author);
+            attributes.put("edit",1);
             return new ModelAndView(attributes, "entry.html");
         }, freeMarkerEngine);
 
@@ -248,51 +262,87 @@ public class main {
 
         post("/editando/:articulo",(request, response) -> {
             Map<String, Object> attributes = new HashMap<>();
-            Articulos article = new Articulos();
-            Usuario user = services.getUsuario(request.session(true).attribute("username"),connection.createStatement());
+
+            String usuario = request.session(true).attribute("username");
+            Usuario user = UserServices.getInstance().find(usuario);
+
             int id = Integer.parseInt(request.params("articulo"));
+
+            Articulos article = ArticulosServices.getInstancia().find(id);
+
+            String title = request.queryParams("title");
+            String content = request.queryParams("content");
+
+            article.setTitulo(title);
+            article.setContenido(content);
+
             String[] tags = request.queryParams("tags").split(",");
 
             ArrayList<Tag> articleTags = new ArrayList<Tag>();
-            article.setId(id);
-            article.setTitulo(request.queryParams("title"));
-            article.setContenido(request.queryParams("content"));
-            article.setAutor(user);
+            System.out.println("\n\nTAGS");
             for (String s:tags) {
-                articleTags.add(services.createTag(s,statement));
+                System.out.println("s");
+                articleTags.add(new Tag(s));
             }
-            article.setTags(articleTags);
-            article.editArticle(connection.createStatement());
+
+
+            TagServices.TagsArticle(articleTags,article);
+            ArticulosServices.getInstancia().editar(article);
+
             response.redirect(String.format("/articulo/%s",id));
             return "";
         });
-
 
         post("/crearArticulo/",(request, response) -> {
 
 
             Map<String, Object> attributes = new HashMap<>();
-            Articulos article = new Articulos();
+
             Calendar cal = Calendar.getInstance();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Usuario user = services.getUsuario(request.session(true).attribute("username"),connection.createStatement());
+
+            String username = request.session(true).attribute("username");
+            String title = request.queryParams("title");
+            String content = request.queryParams("content");
+            Usuario user = UserServices.getInstance().find(username);
             String[] tags = request.queryParams("tags").split(",");
+            System.out.println(tags);
             ArrayList<Tag> articleTags = new ArrayList<Tag>();
-            article.setTitulo(request.queryParams("title"));
-            article.setContenido(request.queryParams("content"));
-            article.setAutor(user);
-            article.setDate(sdf.format(cal.getTime()));
+
+            System.out.println("\n\nTAGS");
             for (String s:tags) {
-                articleTags.add(services.createTag(s,statement));
+                if (!s.equals("")){
+                    articleTags.add(new Tag(s));
+                }
             }
-            article.setTags(articleTags);
-            article.createArticle(statement);
+
+
+            int id = ArticulosServices.CreateArticle(title,content,user);
+            System.out.print("\n\n\tSIZE: "+articleTags.size()+"\n\n");
+            if(articleTags.size() > 0) {
+                TagServices.TagsArticle(articleTags, ArticulosServices.getInstancia().find(id));
+            }
+            System.out.print("\n\n\tWHAT2\n\n");
 
             response.redirect("/");
             return "";
 
         });
+
         before("/agregarComentario/:articulo",(request, response) -> {
+            String user = request.session(true).attribute("username");
+            if (user != null){
+                return;
+            }
+            response.redirect("/login");
+        });
+        before("/like/:articulo",(request, response) -> {
+            String user = request.session(true).attribute("username");
+            if (user != null){
+                return;
+            }
+            response.redirect("/login");
+        });before("/dislike/:articulo",(request, response) -> {
             String user = request.session(true).attribute("username");
             if (user != null){
                 return;
@@ -301,15 +351,74 @@ public class main {
         });
 
         post("/agregarComentario/:articulo",(request, response) -> {
+            System.out.print("\n\nDESDE EL COMENTARIO:\n\n");
             Session session = request.session(true);
 
-            String id = request.params("articulo");
+            int id = Integer.parseInt(request.params("articulo"));
             String comment = request.queryParams("comment");
             String user = session.attribute("username");
-            String query = String.format("INSERT INTO COMENTARIO(comentario,autor,articulo) VALUES('%s','%s',%s)",comment,user,id);
+            Usuario author = UserServices.getInstance().find(user);
 
-            statement.execute(query);
+            Articulos article = ArticulosServices.getInstancia().find(id);
+            System.out.println("\n\tAfter article\n\n");
 
+            System.out.println("\n\nCOMENTARIO\n\n"+comment+" "+author.getUsername()+" "+id+" \n\n");
+            Comment com = new Comment(comment, author, article);
+
+            CommentServices.getInstance().crear(com);
+
+            response.redirect(String.format("/articulo/%s",id));
+            return "";
+        });
+
+        get("/like/:articulo",(request, response) -> {
+            Session session = request.session(true);
+
+            int id = Integer.parseInt(request.params("articulo"));
+
+            Articulos article = ArticulosServices.getInstancia().find(id);
+
+            int likes = article.getLikes();
+            article.setLikes(likes+1);
+            ArticulosServices.getInstancia().editar(article);
+
+            response.redirect(String.format("/articulo/%s",id));
+            return "";
+        });
+
+        get("/articulos/etiqueta/:etiqueta",(request, response) -> {
+            Map<String, Object> attributes = new HashMap<>();
+
+            List<Articulos> articles = ArticulosServices.getInstancia().findAll();
+            ArrayList<Articulos> articlesToShow =  new ArrayList<Articulos>();
+
+            int id = Integer.parseInt(request.params("etiqueta"));
+
+            System.out.println("\n\ntodo bien\n\n");
+
+            for (Articulos art:articles) {
+                for (Tag t:art.getTags()) {
+                    if (t.getId() == id) {
+                        articlesToShow.add(art);
+                    }
+                }
+            }
+
+            attributes.put("articles",articlesToShow);
+
+            return new ModelAndView(attributes, "tag_articles.html");
+        }, freeMarkerEngine);
+
+        get("/dislike/:articulo",(request, response) -> {
+            Session session = request.session(true);
+
+            int id = Integer.parseInt(request.params("articulo"));
+
+            Articulos article = ArticulosServices.getInstancia().find(id);
+            System.out.println("Hope it works");
+            int likes = article.getDislikes();
+            article.setDislikes(likes+1);
+            ArticulosServices.getInstancia().editar(article);
 
             response.redirect(String.format("/articulo/%s",id));
             return "";

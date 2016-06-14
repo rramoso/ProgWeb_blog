@@ -50,6 +50,7 @@
                             <a href="/login">Log In</a>
                         <#else>
                             <a href="/logout">Log out, ${username}</a>
+
                         </#if>
 
                     </li>
@@ -75,14 +76,14 @@
                 <!-- First Blog Post -->
                 <!--Poner referencia de Spark para los titulos y enlace de articulo-->
                 <#list articles as article>
-                    <h2>
-                        <a href="#">${article.titulo}</a>
-                    </h2>
+                    <h2>${article.getTitulo()}</h2>
                     <p class="lead">
                         by <a href="#">${article.getAutor().getName()}</a>
                     </p>
                     <hr>
-                    <p>${article.previewText()}</p>
+                     <p>
+                         ${article.previewText()}
+                     </p>
                     <!--Poner referencia a Articulo completo-->
                     <a class="btn btn-primary" href="/articulo/${article.id}">Read More <span class="glyphicon glyphicon-chevron-right"></span></a>
 
@@ -90,10 +91,10 @@
                 <!-- Pager -->
                 <ul class="pager">
                     <li class="previous">
-                        <a href="#">&larr; Older</a>
+                        <a href="/page/${prev_page}">&larr; Older</a>
                     </li>
                     <li class="next">
-                        <a href="#">Newer &rarr;</a>
+                        <a href="/page/${next_page}">Newer &rarr;</a>
                     </li>
                 </ul>
 

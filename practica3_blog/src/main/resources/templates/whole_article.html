@@ -79,8 +79,12 @@
                 <p>${article.getContenido()}</p>
                 <p>
                     <#list articleTags as tag>
-                        <i> #${tag.getTag()} </i>
+                        <i> <a href="/articulos/etiqueta/${tag.getId()}">#${tag.getTag()}</a> </i>
                     </#list>
+                </p>
+                <p>
+                    <h4 style="display: inline-block">Likes:${article.getLikes()}</h4>
+                    <h4 style="display: inline-block">Dislikes:${article.getDislikes()}</h4>
                 </p>
                 <hr>
 
@@ -88,6 +92,8 @@
                 <hr>
                 <a href="/eliminar/${article.id}" class="btn btn-primary">Eliminar Entrada</a>
                 <a href="/editar/${article.id}" class="btn btn-primary">Editar Entrada</a>
+                <a href="/like/${article.id}" class="btn btn-primary">Like</a>
+                <a href="/dislike/${article.id}" class="btn btn-primary">Dislike</a>
                 <hr>
                 <!-- Blog Comments -->
 
@@ -118,7 +124,7 @@
                     <div class="media-body">
 
                             <h4 class="media-heading">
-                                <small>${comment.getAuthor()}</small>
+                                <small>${comment.getAuthor().getUsername()  }</small>
                             </h4>
                             <p>
                                 ${comment.getComment()}
